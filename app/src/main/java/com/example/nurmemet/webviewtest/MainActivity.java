@@ -4,6 +4,9 @@ import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -15,14 +18,25 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
     private WebView mWebView;
     private float mScale;
+    private ViewGroup rootView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        rootView= (ViewGroup) LayoutInflater.from(this).inflate(R.layout.activity_main,null);
+        setContentView(rootView);
         mWebView = (WebView) findViewById(R.id.web_view);
         mWebView.setWebChromeClient(new WebChromeClient() {
 
+            /**
+             * webview获取到title时调用，通过此方法可以给宿主activity设置标题
+             * @param view
+             * @param title
+             */
+            @Override
+            public void onReceivedTitle(WebView view, String title) {
+                super.onReceivedTitle(view, title);
+            }
         });
         mWebView.setWebViewClient(new WebViewClient() {
             @Override
@@ -58,6 +72,16 @@ public class MainActivity extends AppCompatActivity {
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 return super.shouldOverrideUrlLoading(view, url);
             }
+
+            /**
+             * android  4.4 中此方法调用多次，所以尽量在方法中做业务处理操作
+             * @param view
+             * @param url
+             */
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+            }
         });
         mWebView.getSettings().setJavaScriptEnabled(true);
 
@@ -68,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        //以下代码解决当webview播放视频推出之后，视频仍然在播放的问题，但是有的时候此方法也会跑一场，加上rootview.removeView(mWebview)就可以解决
         mWebView.stopLoading();
         mWebView.removeAllViews();
         mWebView.destroy();
@@ -115,4 +140,29 @@ public class MainActivity extends AppCompatActivity {
         }
         return false;
     }
+
+    /**
+     * 屏蔽长安时间
+     */
+    private void disableLongClick() {
+        mWebView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                return true;
+            }
+        });
+    }
+
+    /**
+     * 启用缩放功能
+     */
+    private void enableScale() {
+        mWebView.getSettings().setSupportZoom(true);
+        mWebView.getSettings().setBuiltInZoomControls(true);
+        mWebView.getSettings().setDisplayZoomControls(false);
+    }
+
+
+
+
 }
